@@ -1,0 +1,266 @@
+Below is a **professional, production-ready README.md** you can place at the **root of `QR_Menu/`** (or adapt into backend/frontend READMEs if you want).
+
+You can copy-paste this directly.
+
+---
+
+# 🍽️ QR Menu – Restaurant Management System
+
+A **QR-based Restaurant Menu & Management System** built using **FastAPI (Backend)** and **React + Vite (Frontend)**.
+The system supports **role-based authentication**, **multi-restaurant management**, and **dynamic menus with pricing sizes**.
+
+---
+
+## 🚀 Features
+
+### 👑 Admin
+
+* Login (no registration)
+* Create restaurants
+* Create global menu categories
+* Control platform data
+
+### 🍽️ Restaurant
+
+* Login using credentials created by Admin
+* Manage own products only
+* Add products with **multiple sizes & prices**
+* Upload product images
+* Toggle product availability
+
+### 👥 Customer (Public)
+
+* No login required
+* View restaurant menu via QR code
+* Browse categories & products
+
+---
+
+## 🏗️ Tech Stack
+
+### Backend
+
+* **FastAPI**
+* **PostgreSQL**
+* **SQLAlchemy**
+* **Alembic (Migrations)**
+* **JWT Authentication**
+* **Role-Based Access Control (RBAC)**
+
+### Frontend
+
+* **React**
+* **Vite**
+* **Tailwind CSS**
+* **Axios**
+* **Zustand (State Management)**
+
+---
+
+## 📂 Project Structure
+
+```
+QR_Menu/
+├── fastapi_restaurant/        # Backend (FastAPI)
+│   ├── app/
+│   │   ├── api/               # API routes
+│   │   ├── core/              # Auth, config, dependencies
+│   │   ├── crud/              # Database operations
+│   │   ├── db/                # DB session
+│   │   ├── models/            # SQLAlchemy models
+│   │   ├── schemas/           # Pydantic schemas
+│   │   └── main.py            # FastAPI entry point
+│   ├── migrations/            # Alembic migrations
+│   ├── uploads/               # Product images
+│   └── alembic.ini
+│
+└── react_restaurant/          # Frontend (React)
+    ├── src/
+    │   ├── components/
+    │   ├── pages/
+    │   ├── services/          # API calls
+    │   ├── store/             # Zustand stores
+    │   └── App.jsx
+    └── vite.config.js
+```
+
+---
+
+## ⚙️ Backend Setup (FastAPI)
+
+### 1️⃣ Create Virtual Environment
+
+```bash
+cd fastapi_restaurant
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 2️⃣ Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3️⃣ Environment Variables (`.env`)
+
+```env
+DATABASE_URL=postgresql+psycopg2://user:password@host:port/dbname
+SECRET_KEY=your_secret_key
+IMAGE_UPLOAD_DIR=./uploads
+```
+
+### 4️⃣ Run Migrations
+
+```bash
+alembic upgrade head
+```
+
+### 5️⃣ Start Backend
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Backend runs at:
+
+```
+http://127.0.0.1:8000
+```
+
+---
+
+## 🎨 Frontend Setup (React)
+
+### 1️⃣ Install Dependencies
+
+```bash
+cd react_restaurant
+npm install
+```
+
+### 2️⃣ Start Frontend
+
+```bash
+npm run dev
+```
+
+Frontend runs at:
+
+```
+http://localhost:5173
+```
+
+---
+
+## 🔐 Authentication Flow
+
+### Admin Login
+
+```
+POST /auth/login
+```
+
+### Restaurant Login
+
+```
+POST /auth/login
+```
+
+JWT Token is required for protected APIs:
+
+```
+Authorization: Bearer <TOKEN>
+```
+
+---
+
+## 🔒 Role-Based Access Control
+
+| Action            | Admin | Restaurant | Public |
+| ----------------- | ----- | ---------- | ------ |
+| Create Restaurant | ✅     | ❌          | ❌      |
+| Create Category   | ✅     | ❌          | ❌      |
+| Create Product    | ❌     | ✅ (own)    | ❌      |
+| Upload Image      | ❌     | ✅ (own)    | ❌      |
+| View Menu         | ✅     | ✅          | ✅      |
+
+---
+
+## 🧾 Example API Endpoints
+
+### Create Restaurant (Admin)
+
+```
+POST /api/v1/restaurants/
+```
+
+### Restaurant Login
+
+```
+POST /auth/login
+```
+
+### Create Product (Restaurant)
+
+```
+POST /api/v1/restaurants/{restaurant_id}/products/
+```
+
+### Public Menu
+
+```
+GET /api/v1/restaurants/{restaurant_id}/products/
+```
+
+---
+
+## 📱 QR Menu Concept
+
+Each restaurant gets a **QR code** pointing to:
+
+```
+/restaurants/{restaurant_id}/menu
+```
+
+Customers scan QR → view live menu → no app install.
+
+---
+
+## 🛡️ Security Highlights
+
+* JWT authentication
+* Role-based authorization
+* Ownership enforcement (restaurant cannot modify others)
+* Password hashing with bcrypt
+* CORS enabled for frontend
+
+---
+
+## 🧠 Future Enhancements
+
+* Orders & cart system
+* Online payments
+* Ratings & reviews
+* Analytics dashboard
+* Kitchen display system
+* Multi-language menu
+
+---
+
+## 👨‍💻 Author
+
+**Arpit Anand**
+FastAPI • React • PostgreSQL • System Design
+
+---
+
+## ⭐ Final Notes
+
+This project is:
+
+* Scalable
+* Secure
+* Production-ready
+* UI/UX friendly
+* Perfect for QR-based restaurant systems

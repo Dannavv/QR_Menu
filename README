@@ -1,9 +1,3 @@
-Below is a **professional, production-ready README.md** you can place at the **root of `QR_Menu/`** (or adapt into backend/frontend READMEs if you want).
-
-You can copy-paste this directly.
-
----
-
 # 🍽️ QR Menu – Restaurant Management System
 
 A **QR-based Restaurant Menu & Management System** built using **FastAPI (Backend)** and **React + Vite (Frontend)**.

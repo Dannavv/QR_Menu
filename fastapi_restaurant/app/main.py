@@ -18,6 +18,7 @@ app.add_middleware(
         "http://localhost:3000",     # React (CRA)
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000",
+         "file://",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -34,24 +35,28 @@ os.makedirs(settings.IMAGE_UPLOAD_DIR, exist_ok=True)
 
 @app.on_event("startup")
 def on_startup():
-    # ⚠️ Dev-only: use Alembic in prod
     Base.metadata.create_all(bind=engine)
 
     db: session = SessionLocal()
     try:
-        # HARD-CODED ADMIN (created once)
-        admin = db.query(User).filter(User.username == "admin").first()
+        admin = (
+            db.query(User)
+            .filter(User.username == settings.ADMIN_USERNAME)
+            .first()
+        )
 
         if not admin:
             admin = User(
-                username="admin",
-                email="admin@example.com",
-                hashed_password=hash_password("admin123"),
+                username=settings.ADMIN_USERNAME,
+                email=settings.ADMIN_EMAIL,
+                hashed_password=hash_password(settings.ADMIN_PASSWORD),
                 is_admin=True,
             )
             db.add(admin)
             db.commit()
-            print("✅ Hardcoded admin created (username=admin, password=admin123)")
+            print(
+                f"✅ Admin created (username={settings.ADMIN_USERNAME})"
+            )
         else:
             print("ℹ️ Admin already exists")
 

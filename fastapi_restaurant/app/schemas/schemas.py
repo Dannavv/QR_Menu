@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 
+
 # ============================
 # Product Size (Pricing)
 # ============================
@@ -12,18 +13,6 @@ class ProductSizeCreate(BaseModel):
 
 class ProductSizeRead(ProductSizeCreate):
     id: int
-
-    class Config:
-        orm_mode = True
-
-
-# ============================
-# Product Images
-# ============================
-
-class ProductImageRead(BaseModel):
-    id: int
-    filename: str
 
     class Config:
         orm_mode = True
@@ -46,6 +35,18 @@ class CategoryRead(CategoryBase):
 
 
 # ============================
+# Product Images  ✅ MUST COME BEFORE ProductRead
+# ============================
+
+class ProductImageRead(BaseModel):
+    id: int
+    image_url: str
+
+    class Config:
+        orm_mode = True
+
+
+# ============================
 # Products
 # ============================
 
@@ -57,10 +58,7 @@ class ProductCreate(BaseModel):
     iced: bool = False
     description: Optional[str] = None
     category_ids: List[int] = []
-
-    # 👇 ADD THIS
     sizes: List[ProductSizeCreate] = []
-
 
 
 class ProductRead(BaseModel):
@@ -80,8 +78,22 @@ class ProductRead(BaseModel):
     class Config:
         orm_mode = True
 
+class ProductUpdate(BaseModel):
+    name: Optional[str] = None
+    veg: Optional[bool] = None
+    remark: Optional[str] = None
+    available: Optional[bool] = None
+    iced: Optional[bool] = None
+    description: Optional[str] = None
+    category_ids: Optional[List[int]] = None
+    sizes: Optional[List[ProductSizeCreate]] = None
+        
+    
 
 
+# ============================
+# Product Availability
+# ============================
 
 class ProductAvailabilityUpdate(BaseModel):
     available: bool
@@ -105,7 +117,6 @@ class RestaurantCreate(BaseModel):
     pure_veg: Optional[bool] = False
 
 
-
 class RestaurantRead(BaseModel):
     id: int
     name: str
@@ -122,3 +133,16 @@ class RestaurantRead(BaseModel):
     class Config:
         orm_mode = True
 
+
+class RestaurantUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+
+    country_code: Optional[str] = None
+    state_code: Optional[str] = None
+    city_code: Optional[str] = None
+
+    location: Optional[str] = None
+    type: Optional[str] = None
+    pure_veg: Optional[bool] = None

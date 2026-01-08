@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
 import { Search, Filter, Edit, Trash2, Plus } from "lucide-react"; // Optional icons
+import { useNavigate } from "react-router-dom";
 
 export default function RestaurantManager() {
   const [restaurants, setRestaurants] = useState([]);
@@ -8,6 +9,8 @@ export default function RestaurantManager() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("All");
+
+  const navigate = useNavigate(); // Initialize navigate
 
   useEffect(() => {
     const loadRestaurants = async () => {
@@ -25,25 +28,47 @@ export default function RestaurantManager() {
 
   // Filter Logic
   const filteredData = restaurants.filter((r) => {
-    const matchesSearch = r.name.toLowerCase().includes(search.toLowerCase()) || 
-                          r.location?.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = r.name.toLowerCase().includes(search.toLowerCase()) ||
+      r.location?.toLowerCase().includes(search.toLowerCase());
     const matchesType = filterType === "All" || r.type === filterType;
     return matchesSearch && matchesType;
   });
+
+  const handleDelete = async (restaurantId) => {
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this restaurant?"
+  );
+  if (!confirmed) return;
+
+  try {
+    await api.deleteRestaurant(restaurantId);
+
+    // 🔥 Remove from UI instantly (no refetch needed)
+    setRestaurants((prev) =>
+      prev.filter((r) => r.id !== restaurantId)
+    );
+  } catch (err) {
+    alert("Failed to delete restaurant");
+  }
+};
+
 
   if (loading) return <div className="p-20 text-center animate-pulse text-gray-500">Loading Dashboard...</div>;
   if (error) return <div className="p-10 text-center text-red-500 bg-red-50 m-6 rounded-lg border border-red-200">{error}</div>;
 
   return (
     <div className="m-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      
+
       {/* --- Header Section --- */}
       <div className="p-6 border-b bg-white flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Restaurant Directory</h1>
           <p className="text-sm text-gray-500">Manage {restaurants.length} registered outlets</p>
         </div>
-        <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition text-sm font-medium">
+        <button
+          onClick={() => navigate("/admin/restaurants/new")} // Navigation call
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition text-sm font-medium"
+        >
           <Plus size={18} /> Add New Restaurant
         </button>
       </div>
@@ -60,7 +85,7 @@ export default function RestaurantManager() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <select 
+        <select
           className="border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
@@ -102,7 +127,7 @@ export default function RestaurantManager() {
                         <span className="w-2 h-2 rounded-full bg-green-600"></span> Pure Veg
                       </span>
                     ) : (
-                        <span className="flex items-center gap-1 text-red-600 text-sm font-bold">
+                      <span className="flex items-center gap-1 text-red-600 text-sm font-bold">
                         <span className="w-2 h-2 rounded-full bg-red-600"></span> Veg and Nonveg
                       </span>
                     )}
@@ -110,9 +135,17 @@ export default function RestaurantManager() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
-                        <Edit size={18} />
+                        <Edit size={18}
+
+                          onClick={() => navigate(`/admin/restaurants/edit/${r.id}`)}
+
+                        />
+
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                      <button className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+
+                        onClick={() => handleDelete(r.id)}
+                      >
                         <Trash2 size={18} />
                       </button>
                     </div>

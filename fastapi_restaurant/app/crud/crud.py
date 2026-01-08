@@ -4,6 +4,7 @@ from passlib.context import CryptContext
 
 from app.models import models
 from app.schemas import schemas
+from app.models.models import Category, Product, ProductImage, ProductSize, Restaurant
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -12,6 +13,7 @@ pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # ============================
 def create_restaurant(db: Session, rest_in: schemas.RestaurantCreate):
     hashed = pwd_ctx.hash(rest_in.password)
+
 
     restaurant = models.Restaurant(
         name=rest_in.name,
@@ -30,6 +32,23 @@ def create_restaurant(db: Session, rest_in: schemas.RestaurantCreate):
     db.add(restaurant)
     db.commit()
     db.refresh(restaurant)
+    return restaurant
+
+
+def delete_restaurant(db: Session, restaurant_id: int):
+    restaurant = (
+        db.query(Restaurant)
+        .filter(Restaurant.id == restaurant_id)
+        .first()
+    )
+
+    if not restaurant:
+        return None
+
+    # 🔥 Soft delete
+    restaurant.is_active = False
+
+    db.commit()
     return restaurant
 
 
@@ -118,6 +137,37 @@ def create_product(db: Session, rest_id: int, product_in: schemas.ProductCreate)
     return product
 
 
+def update_product(
+    db: Session,
+    product: Product,
+    product_in: schemas.ProductUpdate
+):
+    data = product_in.dict(exclude_unset=True)
+
+    # 🔹 Simple fields
+    for field in ["name", "veg", "remark", "available", "iced", "description"]:
+        if field in data:
+            setattr(product, field, data[field])
+
+    # 🔹 Categories (many-to-many)
+    if "category_ids" in data:
+        categories = (
+            db.query(Category)
+            .filter(Category.id.in_(data["category_ids"]))
+            .all()
+        )
+        product.categories = categories
+
+    # 🔹 Sizes (one-to-many)
+    if "sizes" in data:
+        product.sizes.clear()
+        for size in data["sizes"]:
+            product.sizes.append(ProductSize(**size.dict()))
+
+    db.commit()
+    db.refresh(product)
+    return product
+
 
 def get_products_by_restaurant(db: Session, rest_id: int):
     return (
@@ -153,25 +203,25 @@ def update_product_availability(
 # Product Images
 # ============================
 
-def add_product_image(
-    db: Session,
-    product_id: int,
-    filename: str
-):
-    image = models.ProductImage(
-        product_id=product_id,
-        filename=filename
-    )
-    db.add(image)
+def add_product_images(db, product_id: int, image_urls: list[str]):
+    images = []
+
+    for url in image_urls:
+        img = ProductImage(product_id=product_id, image_url=url)
+        db.add(img)
+        images.append(img)
+
     db.commit()
-    db.refresh(image)
-    return image
+    for img in images:
+        db.refresh(img)
+
+    return images
 
 # ============================
 # Product Sizes & Pricing
 # ============================
 
-def add_product_size(
+def add_product_sizes(
     db: Session,
     product_id: int,
     size_label: str,
@@ -192,3 +242,26 @@ def add_product_size(
 
     db.refresh(size)
     return size
+
+def get_restaurant_by_id(db: Session, restaurant_id: int):
+    return (
+        db.query(Restaurant)
+        .filter(Restaurant.id == restaurant_id)
+        .first()
+    )
+
+def update_restaurant(db: Session, restaurant_id: int, data):
+    restaurant = (
+        db.query(Restaurant)
+        .filter(Restaurant.id == restaurant_id)
+        .first()
+    )
+    if not restaurant:
+        return None
+
+    for key, value in data.dict(exclude_unset=True).items():
+        setattr(restaurant, key, value)
+
+    db.commit()
+    db.refresh(restaurant)
+    return restaurant

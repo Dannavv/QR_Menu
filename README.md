@@ -258,3 +258,6 @@ This project is:
 * Production-ready
 * UI/UX friendly
 * Perfect for QR-based restaurant systems
+
+# Usefull commands
+* tree -L 3 -I "node_modules|venv|.venv|__pycache__|.git"

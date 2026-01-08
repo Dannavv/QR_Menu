@@ -71,11 +71,13 @@ class Product(Base):
 
 class ProductImage(Base):
     __tablename__ = "product_images"
-    id = Column(Integer, primary_key=True)
+
+    id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"))
-    filename = Column(String(1024), nullable=False)
+    image_url = Column(String(1024), nullable=False)
 
     product = relationship("Product", back_populates="images")
+
 
 class ProductSize(Base):
     __tablename__ = "product_sizes"

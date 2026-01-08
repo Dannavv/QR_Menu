@@ -9,6 +9,9 @@ import MenuManager from "./pages/MenuManager";
 import CategoryManager from "./pages/CategoryManager";
 import Layout from "./components/Layout";
 import RestaurantManager from "./pages/RestaurantManager";
+import AddRestaurant from "./pages/AddRestaurant";
+import AddProduct from "./pages/AddProduct";
+import TestUpload from "./pages/testupload";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
@@ -70,8 +73,12 @@ function App() {
               <Route path="admin/dashboard" element={<AdminDashboard />} />
               <Route path="categories" element={<CategoryManager />} />
               <Route path="admin/restaurants" element={<RestaurantManager />} />
+              <Route path="admin/restaurants/new" element={<AddRestaurant />} /> {/* Add this */}
+              <Route path="admin/restaurants/edit/:id" element={<AddRestaurant />} />
             </>
           )}
+
+
 
           {/* ===== RESTAURANT ROUTES ===== */}
           {userRole === "restaurant" && (
@@ -80,12 +87,27 @@ function App() {
                 path="restaurant/dashboard"
                 element={<RestaurantDashboard />}
               />
+
+              {/* Menu Management Routes */}
               <Route
                 path="restaurant/:rest_id/menu"
                 element={<MenuManager />}
               />
+
+              {/* Add New Product - Requires rest_id to know where to add */}
+              <Route
+                path="restaurant/:rest_id/menu/add"
+                element={<AddProduct />}
+              />
+
+              {/* Edit Existing Product - Requires rest_id for context and product_id for fetching */}
+              <Route
+                path="restaurant/:rest_id/menu/edit/:product_id"
+                element={<AddProduct />}
+              />
+              <Route path="testupload" element={<TestUpload />} />
             </>
-          )}
+          )}CategoryManager={}
         </Route>
 
         {/* ❌ FALLBACK */}

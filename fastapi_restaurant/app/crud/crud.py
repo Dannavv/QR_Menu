@@ -8,6 +8,8 @@ from app.models.models import Category, Product, ProductImage, ProductSize, Rest
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
+
 # ============================
 # Restaurants
 # ============================
@@ -27,6 +29,7 @@ def create_restaurant(db: Session, rest_in: schemas.RestaurantCreate):
         location=rest_in.location,
         type=rest_in.type,
         pure_veg=rest_in.pure_veg,
+        logo_url=rest_in.logo_url,
     )
 
     db.add(restaurant)
@@ -45,11 +48,10 @@ def delete_restaurant(db: Session, restaurant_id: int):
     if not restaurant:
         return None
 
-    # 🔥 Soft delete
-    restaurant.is_active = False
-
+    db.delete(restaurant)
     db.commit()
-    return restaurant
+    return True
+
 
 
 
@@ -76,6 +78,30 @@ def get_restaurants(db: Session, skip: int = 0, limit: int = 100):
         .limit(limit)
         .all()
     )
+    
+
+def get_restaurant_by_id(db: Session, restaurant_id: int):
+    return (
+        db.query(Restaurant)
+        .filter(Restaurant.id == restaurant_id)
+        .first()
+    )
+
+def update_restaurant(db: Session, restaurant_id: int, data):
+    restaurant = (
+        db.query(Restaurant)
+        .filter(Restaurant.id == restaurant_id)
+        .first()
+    )
+    if not restaurant:
+        return None
+
+    for key, value in data.dict(exclude_unset=True).items():
+        setattr(restaurant, key, value)
+
+    db.commit()
+    db.refresh(restaurant)
+    return restaurant
 
 # ============================
 # Categories
@@ -242,26 +268,3 @@ def add_product_sizes(
 
     db.refresh(size)
     return size
-
-def get_restaurant_by_id(db: Session, restaurant_id: int):
-    return (
-        db.query(Restaurant)
-        .filter(Restaurant.id == restaurant_id)
-        .first()
-    )
-
-def update_restaurant(db: Session, restaurant_id: int, data):
-    restaurant = (
-        db.query(Restaurant)
-        .filter(Restaurant.id == restaurant_id)
-        .first()
-    )
-    if not restaurant:
-        return None
-
-    for key, value in data.dict(exclude_unset=True).items():
-        setattr(restaurant, key, value)
-
-    db.commit()
-    db.refresh(restaurant)
-    return restaurant

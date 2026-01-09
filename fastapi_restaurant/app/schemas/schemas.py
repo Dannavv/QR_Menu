@@ -115,6 +115,8 @@ class RestaurantCreate(BaseModel):
     location: Optional[str] = None
     type: Optional[str] = None
     pure_veg: Optional[bool] = False
+    logo_url: Optional[str] = None
+
 
 
 class RestaurantRead(BaseModel):
@@ -129,6 +131,7 @@ class RestaurantRead(BaseModel):
     location: Optional[str]
     type: Optional[str]
     pure_veg: bool
+    logo_url: Optional[str]
 
     class Config:
         orm_mode = True
@@ -146,3 +149,4 @@ class RestaurantUpdate(BaseModel):
     location: Optional[str] = None
     type: Optional[str] = None
     pure_veg: Optional[bool] = None
+    logo_url: Optional[str] = None

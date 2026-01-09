@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Form
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.core.config import settings
 from app.core.deps import require_admin, require_restaurant
 import shutil, os
-
+from pydantic import EmailStr  # Add this\
 from app.crud.crud import (
     create_restaurant,
     delete_restaurant,
@@ -39,13 +39,32 @@ from app.models.models import ProductImage
 from typing import List
 from app.core.s3 import upload_file_to_s3
 from app.crud.crud import add_product_images
+from app.models import models
+from passlib.context import CryptContext
+pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 router = APIRouter()
 
+
 # =========================================================
 # RESTAURANTS
 # =========================================================
+
+# @router.post(
+#     "/restaurants/",
+#     response_model=RestaurantRead,
+#     dependencies=[Depends(require_admin)],
+#     tags=["Restaurant"]
+# )
+# def create_restaurant_api(
+#     rest_in: RestaurantCreate,
+#     db: Session = Depends(get_db),
+# ):
+#     if get_restaurant_by_email(db, rest_in.email):
+#         raise HTTPException(status_code=400, detail="Email already registered")
+
+#     return create_restaurant(db, rest_in)
 
 @router.post(
     "/restaurants/",
@@ -54,13 +73,52 @@ router = APIRouter()
     tags=["Restaurant"]
 )
 def create_restaurant_api(
-    rest_in: RestaurantCreate,
+    name: str = Form(...),
+    email: EmailStr = Form(...),
+    password: str = Form(...),
+
+    country_code: str | None = Form(None),
+    state_code: str | None = Form(None),
+    city_code: str | None = Form(None),
+
+    location: str | None = Form(None),
+    type: str | None = Form(None),
+    pure_veg: bool = Form(False),
+
+    # ✅ OPTIONAL LOGO
+    logo: UploadFile | None = File(None),
+
     db: Session = Depends(get_db),
 ):
-    if get_restaurant_by_email(db, rest_in.email):
+    if get_restaurant_by_email(db, email):
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    return create_restaurant(db, rest_in)
+    logo_url = None
+    if logo:
+        logo_url = upload_file_to_s3(logo, folder="restaurants/logos")
+
+    restaurant = models.Restaurant(
+        name=name,
+        email=email,
+        password_hash=pwd_ctx.hash(password),
+
+        country_code=country_code,
+        state_code=state_code,
+        city_code=city_code,
+
+        location=location,
+        type=type,
+        pure_veg=pure_veg,
+
+        # ✅ SET LOGO URL
+        logo_url=logo_url,
+    )
+
+    db.add(restaurant)
+    db.commit()
+    db.refresh(restaurant)
+    return restaurant
+
 
 
 @router.delete("/restaurants/{restaurant_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_admin)], tags=["Restaurant"]
@@ -76,15 +134,72 @@ def delete_restaurant_api(
     return
 
 
-@router.patch("/restaurants/{restaurant_id}", response_model=RestaurantRead, tags=["Restaurant"])
+# @router.patch("/restaurants/{restaurant_id}", response_model=RestaurantRead, tags=["Restaurant"])
+# def update_restaurant_api(
+#     restaurant_id: int,
+#     data: RestaurantUpdate,
+#     db: Session = Depends(get_db),
+# ):
+#     restaurant = update_restaurant(db, restaurant_id, data)
+#     if not restaurant:
+#         raise HTTPException(status_code=404, detail="Restaurant not found")
+#     return restaurant
+
+
+@router.patch(
+    "/restaurants/{restaurant_id}",
+    response_model=RestaurantRead,
+    tags=["Restaurant"],
+)
 def update_restaurant_api(
     restaurant_id: int,
-    data: RestaurantUpdate,
+
+    # ===== TEXT FIELDS =====
+    name: str | None = Form(None),
+    email: EmailStr | None = Form(None),
+    password: str | None = Form(None),
+
+    country_code: str | None = Form(None),
+    state_code: str | None = Form(None),
+    city_code: str | None = Form(None),
+
+    location: str | None = Form(None),
+    type: str | None = Form(None),
+    pure_veg: bool | None = Form(None),
+
+    # ===== FILE =====
+    logo: UploadFile | None = File(None),
+
     db: Session = Depends(get_db),
 ):
-    restaurant = update_restaurant(db, restaurant_id, data)
+    restaurant = get_restaurant_by_id(db, restaurant_id)
     if not restaurant:
         raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    # ----- Update normal fields -----
+    if name is not None:
+        restaurant.name = name
+    if email is not None:
+        restaurant.email = email
+    if password is not None:
+        restaurant.password_hash = pwd_ctx.hash(password)
+
+    restaurant.country_code = country_code or restaurant.country_code
+    restaurant.state_code = state_code or restaurant.state_code
+    restaurant.city_code = city_code or restaurant.city_code
+    restaurant.location = location or restaurant.location
+    restaurant.type = type or restaurant.type
+
+    if pure_veg is not None:
+        restaurant.pure_veg = pure_veg
+
+    # ----- Update logo -----
+    if logo:
+        logo_url = upload_file_to_s3(logo, folder="restaurants/logos")
+        restaurant.logo_url = logo_url
+
+    db.commit()
+    db.refresh(restaurant)
     return restaurant
 
 
@@ -108,6 +223,8 @@ def get_restaurant_api(
         raise HTTPException(status_code=404, detail="Restaurant not found")
     
     return restaurant
+
+
 # =========================================================
 # CATEGORIES (ADMIN CREATE, PUBLIC READ)
 # =========================================================
@@ -236,6 +353,8 @@ def update_availability_api(
     response_model=List[ProductImageRead]
   
 )
+
+
 def upload_product_images_api(
     product_id: int,
     files: List[UploadFile] = File(...),

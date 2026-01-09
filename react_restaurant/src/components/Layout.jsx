@@ -120,19 +120,6 @@ export default function Layout({ setAuth, userRole, restaurantId }) {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Clean Header */}
-        <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-10 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">System Online</span>
-          </div>
-          
-          {/* <div className="flex items-center gap-4">
-             <div className="text-right">
-                <p className="text-xs font-bold text-slate-900">Partner Support</p>
-                <p className="text-[10px] text-indigo-600 font-medium hover:underline cursor-pointer">View Docs</p>
-             </div>
-          </div> */}
-        </header>
 
         {/* Dynamic Page Content */}
         <main className="flex-1 overflow-auto bg-slate-50/40 p-10">

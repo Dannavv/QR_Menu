@@ -24,6 +24,9 @@ export const api = {
   // =========================
   login: (credentials) => apiClient.post('/auth/login', credentials),
 
+  getPublicRestaurantProfile: (country, state, city, identifier) => 
+    apiClient.get(`/api/v1/public/${country}/${state}/${city}/${identifier}`),
+
   // =========================
   // Restaurant Endpoints
   // =========================
@@ -64,6 +67,12 @@ export const api = {
 
   updateProductDetails: (productId, data) =>
     apiClient.patch(`/api/v1/products/${productId}`, data),
+
+  deleteProductImage: (imageId) =>
+    apiClient.delete(`/api/v1/products/images/${imageId}`),
+
+
+
 
   // =========================
   // Availability

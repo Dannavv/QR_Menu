@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import { api } from '../services/api'; // Fixed import
+import { api } from '../services/api';
 
 export const useRestaurantStore = create((set) => ({
   restaurants: [],
+  selectedRestaurant: null,
   isLoading: false,
 
   fetchRestaurants: async () => {
@@ -13,6 +14,19 @@ export const useRestaurantStore = create((set) => ({
     } catch (error) {
       console.error('Error fetching restaurants:', error);
       set({ isLoading: false });
+    }
+  },
+
+  fetchRestaurantById: async (restId) => {
+    set({ isLoading: true });
+    try {
+      const { data } = await api.getRestaurantById(restId);
+      set({ selectedRestaurant: data, isLoading: false });
+      return data;
+    } catch (error) {
+      console.error('Error fetching restaurant:', error);
+      set({ isLoading: false });
+      throw error;
     }
   },
 

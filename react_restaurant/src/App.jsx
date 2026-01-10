@@ -12,6 +12,8 @@ import RestaurantManager from "./pages/RestaurantManager";
 import AddRestaurant from "./pages/AddRestaurant";
 import AddProduct from "./pages/AddProduct";
 import TestUpload from "./pages/testupload";
+import PublicRestaurantView from "./pages/PublicRestaurantView";
+import BrowseRestaurants from "./pages/BrowseRestaurants";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
@@ -75,8 +77,14 @@ function App() {
               <Route path="admin/restaurants" element={<RestaurantManager />} />
               <Route path="admin/restaurants/new" element={<AddRestaurant />} /> {/* Add this */}
               <Route path="admin/restaurants/edit/:id" element={<AddRestaurant />} />
+
             </>
           )}
+
+
+
+
+
 
 
 
@@ -107,12 +115,26 @@ function App() {
               />
               <Route path="testupload" element={<TestUpload />} />
             </>
-          )}CategoryManager={}
+          )}CategoryManager={ }
         </Route>
 
         {/* ❌ FALLBACK */}
         <Route path="*" element={<Navigate to="/" />} />
+
+        {/* Browse Routes */}
+        <Route path="/browse" element={<BrowseRestaurants />} />
+        <Route path="/:country" element={<BrowseRestaurants />} />
+        <Route path="/:country/:state" element={<BrowseRestaurants />} />
+        <Route path="/:country/:state/:city" element={<BrowseRestaurants />} />
+
+        <Route
+          path="/:country/:state/:city/:identifier"
+          element={<PublicRestaurantView isPublicView={true} />}
+        />
+
       </Routes>
+
+
     </Router>
   );
 }

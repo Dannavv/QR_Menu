@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { api } from '../services/api';
-import { LogIn, Lock, User, AlertCircle } from 'lucide-react'; // Optional: for icons
+import { useNavigate, Link } from 'react-router-dom'; // Added Link and useNavigate
+import { LogIn, Lock, User, AlertCircle, Globe } from 'lucide-react';
 
 export default function Login({ setAuth }) {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(''); // Clear error on new attempt
+    setError('');
     try {
       const res = await api.login(credentials);
       const { access_token, role, admin_id, restaurant_id } = res.data;
@@ -26,44 +28,44 @@ export default function Login({ setAuth }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100">
         
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center">
-            <LogIn className="h-6 w-6 text-indigo-600" />
+          <div className="mx-auto h-16 w-16 bg-indigo-50 rounded-3xl flex items-center justify-center mb-6">
+            <LogIn className="h-8 w-8 text-indigo-600" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Welcome Back
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+            Partner Login
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Please sign in to your admin account
+          <p className="mt-2 text-sm font-medium text-slate-500">
+            Manage your digital menu and presence
           </p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 flex items-center animate-shake">
-            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-rose-50 border-l-4 border-rose-400 p-4 flex items-center animate-shake rounded-r-xl">
+            <AlertCircle className="h-5 w-5 text-rose-400 mr-3" />
+            <p className="text-xs font-bold text-rose-700 uppercase tracking-tight">{error}</p>
           </div>
         )}
 
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div className="rounded-md shadow-sm space-y-4">
+          <div className="space-y-5">
             {/* Username Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Username</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-slate-300" />
                 </div>
                 <input
                   type="text"
                   required
-                  className="appearance-none relative block w-full px-10 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm"
-                  placeholder="Enter your username"
+                  className="block w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 text-slate-900 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white focus:border-indigo-200 transition-all font-bold text-sm"
+                  placeholder="admin_username"
                   onChange={(e) => setCredentials({...credentials, username: e.target.value})}
                 />
               </div>
@@ -71,15 +73,15 @@ export default function Login({ setAuth }) {
 
             {/* Password Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Password</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-slate-300" />
                 </div>
                 <input
                   type="password"
                   required
-                  className="appearance-none relative block w-full px-10 py-3 border border-gray-300 placeholder-gray-400 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all sm:text-sm"
+                  className="block w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 text-slate-900 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white focus:border-indigo-200 transition-all font-bold text-sm"
                   placeholder="••••••••"
                   onChange={(e) => setCredentials({...credentials, password: e.target.value})}
                 />
@@ -87,15 +89,29 @@ export default function Login({ setAuth }) {
             </div>
           </div>
 
-          <div>
+          <div className="pt-2">
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+              className="w-full flex justify-center py-4 px-4 bg-slate-900 text-white text-sm font-black uppercase tracking-widest rounded-2xl hover:bg-indigo-600 shadow-lg shadow-indigo-100 transition-all active:scale-[0.98]"
             >
-              Sign in
+              Sign In
             </button>
           </div>
         </form>
+
+        {/* BROWSE OPTION SECTION */}
+        <div className="mt-10 pt-8 border-t border-slate-50 text-center">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">
+            Not a partner?
+          </p>
+          <Link 
+            to="/browse" 
+            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition-colors"
+          >
+            <Globe size={14} />
+            Browse Restaurants
+          </Link>
+        </div>
       </div>
     </div>
   );

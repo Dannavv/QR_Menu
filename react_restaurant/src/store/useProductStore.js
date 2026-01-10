@@ -26,18 +26,20 @@ export const useProductStore = create((set, get) => ({
     }
   },
 
-  updateAvailability: async (product_id, available) => {
-    try {
-      const { data } = await api.updateAvailability(product_id, available);
-      set((state) => ({
-        products: state.products.map((p) => 
-          p.id === product_id ? { ...p, available: data.available } : p
-        )
-      }));
-    } catch (error) {
-      console.error('Error updating availability:', error);
-    }
-  },
+// Inside useProductStore.js
+toggleAvailability: async (product_id, current_available) => { // Added current status param
+  try {
+    // We send the OPPOSITE of current availability to the API
+    const { data } = await api.updateAvailability(product_id, !current_available);
+    set((state) => ({
+      products: state.products.map((p) => 
+        p.id === product_id ? { ...p, available: data.available } : p
+      )
+    }));
+  } catch (error) {
+    console.error('Error updating availability:', error);
+  }
+},
 
   uploadImage: async (product_id, file) => {
     try {

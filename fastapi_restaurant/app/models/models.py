@@ -45,6 +45,7 @@ class Category(Base):
 
     products = relationship("Product", secondary=product_category, back_populates="categories")
 
+
 class Product(Base):
     __tablename__ = "products"
 

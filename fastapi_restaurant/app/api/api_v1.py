@@ -1,3 +1,4 @@
+import json
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status, Form
 from sqlalchemy.orm import Session
 from app.db.session import get_db
@@ -24,6 +25,7 @@ from app.crud.crud import (
 
 from app.schemas.schemas import (
     ProductUpdate,
+    PublicRestaurantView,
     RestaurantCreate,
     RestaurantRead,
     CategoryBase,
@@ -34,10 +36,10 @@ from app.schemas.schemas import (
     ProductAvailabilityUpdate,
     RestaurantUpdate,
 )
-from app.models.models import ProductImage
+from app.models.models import Product, ProductImage
 
 from typing import List
-from app.core.s3 import upload_file_to_s3
+from app.core.s3 import delete_file_from_s3, upload_file_to_s3
 from app.crud.crud import add_product_images
 from app.models import models
 from passlib.context import CryptContext
@@ -247,29 +249,70 @@ def list_categories_api(db: Session = Depends(get_db)):
     return list_categories(db)
 
 
+
 # =========================================================
 # PRODUCTS
 # =========================================================
 
+# @router.post(
+#     "/restaurants/{rest_id}/products/",
+#     response_model=ProductRead,
+#       tags=["Product"]
+# )
+# def create_product_api(
+#     rest_id: int,
+#     product_in: ProductCreate,
+#     db: Session = Depends(get_db),
+#     user=Depends(require_restaurant),
+# ):
+#     # 🔐 restaurant can only create for itself
+#     if user["restaurant_id"] != rest_id:
+#         raise HTTPException(status_code=403, detail="Not allowed")
+
+#     if not get_restaurant(db, rest_id):
+#         raise HTTPException(status_code=404, detail="Restaurant not found")
+
+#     return create_product(db, rest_id, product_in)
+
 @router.post(
     "/restaurants/{rest_id}/products/",
     response_model=ProductRead,
-      tags=["Product"]
+    tags=["Product"]
 )
 def create_product_api(
     rest_id: int,
-    product_in: ProductCreate,
+    product: str = Form(...),                # JSON string
+    images: list[UploadFile] = File(None),   # files
     db: Session = Depends(get_db),
     user=Depends(require_restaurant),
 ):
-    # 🔐 restaurant can only create for itself
+    # 🔐 Permission check
     if user["restaurant_id"] != rest_id:
         raise HTTPException(status_code=403, detail="Not allowed")
 
     if not get_restaurant(db, rest_id):
         raise HTTPException(status_code=404, detail="Restaurant not found")
 
-    return create_product(db, rest_id, product_in)
+    # 🔹 Parse JSON
+    product_in = ProductCreate(**json.loads(product))
+
+    # 🔹 Create product
+    product_obj = create_product(db, rest_id, product_in)
+
+    # 🔹 Upload images & store URLs
+    if images:
+        for image in images:
+            url = upload_file_to_s3(image, folder="products")
+            db.add(ProductImage(
+                product_id=product_obj.id,
+                image_url=url
+            ))
+
+        db.commit()
+        db.refresh(product_obj)
+
+    return product_obj
+
 
 
 @router.get(
@@ -298,26 +341,104 @@ def read_product_api(
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
+
+# @router.patch(
+#     "/products/{product_id}",
+#     response_model=ProductRead,
+#       tags=["Product"]
+# )
+# def update_product_api(
+#     product_id: int,
+#     product_in: ProductUpdate,
+#     db: Session = Depends(get_db),
+#     user=Depends(require_restaurant),
+# ):
+#     product = get_product(db, product_id)
+#     if not product:
+#         raise HTTPException(status_code=404, detail="Product not found")
+
+#     # 🔐 restaurant can update only its own product
+#     if product.restaurant_id != user["restaurant_id"]:
+#         raise HTTPException(status_code=403, detail="Not allowed")
+
+#     return update_product(db, product, product_in)
+
+
 @router.patch(
     "/products/{product_id}",
     response_model=ProductRead,
-      tags=["Product"]
+    tags=["Product"]
 )
 def update_product_api(
     product_id: int,
-    product_in: ProductUpdate,
+    product: str = Form(...),
+    images: list[UploadFile] = File(None),
     db: Session = Depends(get_db),
     user=Depends(require_restaurant),
 ):
-    product = get_product(db, product_id)
-    if not product:
+    product_obj = get_product(db, product_id)
+    if not product_obj:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # 🔐 restaurant can update only its own product
+    if product_obj.restaurant_id != user["restaurant_id"]:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    # 🔹 Parse JSON
+    product_in = ProductUpdate(**json.loads(product))
+
+    # 🔹 Update product fields
+    updated_product = update_product(db, product_obj, product_in)
+
+    # 🔹 Upload & append images
+    if images:
+        for image in images:
+            url = upload_file_to_s3(image, folder="products")
+            db.add(ProductImage(
+                product_id=product_id,
+                image_url=url
+            ))
+
+        db.commit()
+        db.refresh(updated_product)
+
+    return updated_product
+
+
+@router.delete(
+    "/products/images/{image_id}",
+    status_code=204,
+    tags=["Product"]
+)
+def delete_product_image_api(
+    image_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(require_restaurant),
+):
+    image = db.query(ProductImage).filter(
+        ProductImage.id == image_id
+    ).first()
+
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    # 🔐 ownership check
+    product = db.query(Product).filter(
+        Product.id == image.product_id
+    ).first()
+
     if product.restaurant_id != user["restaurant_id"]:
         raise HTTPException(status_code=403, detail="Not allowed")
 
-    return update_product(db, product, product_in)
+    # 🔥 delete from S3
+    delete_file_from_s3(image.image_url)
+
+    # 🔥 delete from DB
+    db.delete(image)
+    db.commit()
+
+    return
+
+
 
 # =========================================================
 # PRODUCT AVAILABILITY (RESTAURANT ONLY)
@@ -333,7 +454,9 @@ def update_availability_api(
     payload: ProductAvailabilityUpdate,
     db: Session = Depends(get_db),
     user=Depends(require_restaurant),
-):
+):  
+    
+    print("here")
     product = get_product(db, product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -401,3 +524,39 @@ def upload_product_images_temp(
         image_urls.append(url)
 
     return add_product_images(db, product_id, image_urls)
+
+
+
+
+
+# =========================================================
+# PUBLIC ENDPOINTS (NO AUTH REQUIRED)
+# =========================================================
+@router.get(
+    "/public/{country}/{state}/{city}/{identifier}",
+    response_model=PublicRestaurantView,
+    tags=["Public"]
+)
+def get_public_restaurant_view(
+    country: str,
+    state: str,
+    city: str,
+    identifier: str,
+    db: Session = Depends(get_db)
+):
+    restaurant = db.query(models.Restaurant).filter(
+        models.Restaurant.email.ilike(f"{identifier}@%.com")
+    ).first()
+
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    products = db.query(models.Product).filter(
+        models.Product.restaurant_id == restaurant.id,
+        models.Product.available.is_(True)
+    ).all()
+
+    return {
+        "restaurant": restaurant,
+        "products": products
+    }

@@ -121,6 +121,8 @@ def create_category(db: Session, category: schemas.CategoryBase):
 def list_categories(db: Session):
     return db.query(models.Category).all()
 
+
+
 # ============================
 # Products
 # ============================
@@ -162,6 +164,7 @@ def create_product(db: Session, rest_id: int, product_in: schemas.ProductCreate)
     db.refresh(product)
     return product
 
+from sqlalchemy import delete
 
 def update_product(
     db: Session,
@@ -175,7 +178,7 @@ def update_product(
         if field in data:
             setattr(product, field, data[field])
 
-    # 🔹 Categories (many-to-many)
+    # 🔹 Categories
     if "category_ids" in data:
         categories = (
             db.query(Category)
@@ -184,15 +187,26 @@ def update_product(
         )
         product.categories = categories
 
-    # 🔹 Sizes (one-to-many)
+    # 🔹 Sizes (FIXED PROPERLY)
     if "sizes" in data:
-        product.sizes.clear()
+        # ❗ DELETE FIRST
+        db.query(ProductSize).filter(
+            ProductSize.product_id == product.id
+        ).delete(synchronize_session=False)
+
+        # ❗ INSERT FRESH
         for size in data["sizes"]:
-            product.sizes.append(ProductSize(**size.dict()))
+            db.add(ProductSize(
+                product_id=product.id,
+                size_label=size["size_label"],
+                price=size["price"],
+            ))
 
     db.commit()
     db.refresh(product)
     return product
+
+
 
 
 def get_products_by_restaurant(db: Session, rest_id: int):

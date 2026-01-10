@@ -56,8 +56,11 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Build outputs
-build/
+# build/
 dist/
+!react_restaurant/
+!react_restaurant/dist/
+!react_restaurant/dist/**
 
 # Vite / CRA cache
 .vite/

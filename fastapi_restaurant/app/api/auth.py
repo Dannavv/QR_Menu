@@ -10,6 +10,7 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/login", response_model=TokenResponse)
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    
 
     # 1️⃣ Try admin login
     admin = db.query(User).filter(User.username == payload.username).first()
